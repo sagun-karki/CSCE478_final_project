@@ -1,0 +1,96 @@
+---
+title: "Uber & Lyft Cab Prices Prediction"
+subtitle: "CSCE 478 Project Report"
+author: "Sagun Karki"
+format: 
+  pdf:
+    toc: true
+    number-sections: true
+fontsize: 11pt
+geometry: margin=1in
+execute:
+  echo: false
+---
+
+---
+
+## Problem Being Addressed
+
+Rideshare pricing varies based on dynamic factors such as distance, surge pricing, time, location, and weather. The goal of this project is to build models that accurately estimate cab fare prices for Uber and Lyft using historical trip and weather data. Predicting ride prices benefits cab drivers allowing them to maximize their earning on their working hours.
+
+## Models Used
+
+Two models were trained and evaluated:
+
+1. **Linear Regression**  
+A baseline model assuming a linear relationship between features and target (price). It is simple and interpretable but fails to model complex interactions between categorical and numerical data.
+
+2. **Random Forest Regressor**  
+An ensemble of decision trees that handles nonlinearity and variable interactions effectively. It also provides insight into feature importance.
+
+### Preprocessing Steps
+
+- Merged cab trip data with weather data using nearest timestamp within 30 minutes at the source location.
+- Dropped columns with high missingness (e.g., `rain` with ~85% missing).
+- Dropped rows with missing target (`price`) or unmatched weather.
+- Label encoded all categorical variables.
+- Extracted `hour`, `dayofweek`, and `month` from timestamps.
+- Final dataset was split 80/20 into training and testing sets.
+
+## Performance Indicators Compared and Justification for Best Model
+
+
+Models were evaluated using:
+
+- **MSE** (Mean Squared Error): Penalizes larger errors more heavily, making it useful when large deviations from the true value are especially undesirable.
+- **RMSE** (Root Mean Squared Error): Square root of MSE, brings error units back to the original scale, improving interpretability.
+- **MAE** (Mean Absolute Error): Averages the absolute difference between predicted and actual values. It is less sensitive to outliers than MSE/RMSE.
+- **R² Score** (Coefficient of Determination): Measures the proportion of variance in the target variable explained by the model. Closer to 1 indicates better fit.
+
+### Empirical Results
+#### Actual vs Predicted Graph
+![](./notebooks/Final_cab_price_prediction/output_49_0.png){width=82%}
+
+#### Metrics Comparision
+```{python}
+import pandas as pd
+
+df_metrics = pd.read_csv("data/metrics.csv")
+from tabulate import tabulate
+df_metrics.rename(columns={'index': "Models"}, inplace=True)
+print(tabulate(df_metrics, headers='keys', tablefmt='github', showindex=False))
+```
+
+The **Random Forest Regressor** outperformed Linear Regression across all evaluation metrics. It achieved a significantly higher R² score, indicating better ability to explain variance in the data. For MSE, RMSE, and MAE, which measure prediction error, lower values are better, and Random Forest consistently produced smaller errors. The actual vs. predicted scatter plot also showed Random Forest predictions clustering closer to the ideal diagonal line, indicating more accurate and reliable predictions. So, the Random Forest Regressor performs better than Linear Regression to predict cab prices.
+
+
+## Pros and Cons of Our Approach
+
+**Pros:**
+
+- Data cleaning and preprocessing were effective, we lost only around 8% of data due to missing values.
+
+- Models were trained on a dataset enhanced with weather, time-based, and encoded categorical features, improving the overall quality and predictive power.
+
+- Random Forest was effective and interpretable via feature importances.
+
+**Cons:**
+
+
+- We joined weather data but one key metric Rain is missing.
+  - We only used weather for `source` of the trip which is good but we used a function to join the cab data with weather data to get approximate match (within 30minutes of error range) which might not be ideal in larger datasets.
+
+- Linear Regression lacked accuracy and was not suitable as baseline based on analysis the plots and metrics.
+- 
+- We used all available features, plus engineered ones, to make comparision fair using different models.
+  - While this can negatively affect Linear Regression due to multicollinearity and overfitting, Random Forest handles many features well and helps us assess their relative importance.
+
+![](./notebooks/Final_cab_price_prediction/output_58_0.png){width=70%}
+
+- `product_id` shows the highest feature importance, likely because it encodes ride types (e.g., UberX) which directly influence price; however, the mix of readable names and UUIDs makes interpretation unclear.
+  
+
+- The dominance of `product_id` dominance can make it hard to find the impact of other features like `weather` or `time_of_day`.
+
+
+
