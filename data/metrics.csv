@@ -1,0 +1,3 @@
+index,MSE,RMSE,R2,MAE
+Random Forest,3.34,1.83,0.96,1.15
+Linear Regression,71.25,8.44,0.18,6.95
